@@ -18,7 +18,7 @@ function App() {
         )}
       </main>
       <footer className="footer">
-        <p>&copy; 2026 Parfum Catalog &mdash; All rights reserved</p>
+        <p>&copy; 2026 &nbsp;✦&nbsp; Parfum Catalog &nbsp;✦&nbsp; All rights reserved</p>
       </footer>
     </div>
   );

@@ -62,7 +62,7 @@ function ViewProducts() {
     <div className="view-container">
       {/* Header + search bar */}
       <div className="view-header">
-        <h2 className="page-title">All Perfume Products</h2>
+        <h2 className="page-title">The <span>Collection</span></h2>
         <div className="search-wrapper">
           <span className="search-icon-left">&#128269;</span>
           <input

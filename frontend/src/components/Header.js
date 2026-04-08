@@ -5,8 +5,8 @@ function Header({ currentPage, setCurrentPage }) {
     <header className="header">
       <div className="header-content">
         <div className="logo">
-          <span className="logo-icon">&#127808;</span>
-          <span className="logo-text">Parfum Catalog</span>
+          <span className="logo-icon">✦</span>
+          <span className="logo-text">Parfum&nbsp;Catalog</span>
         </div>
         <nav className="nav">
           <button

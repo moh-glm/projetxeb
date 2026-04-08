@@ -95,7 +95,8 @@ function AddProduct({ setCurrentPage }) {
 
   return (
     <div className="form-container">
-      <h2 className="page-title">Add a New Perfume Product</h2>
+      <h2 className="page-title">New <span>Perfume</span></h2>
+      <div className="luxury-divider"><span>✦ add to collection ✦</span></div>
 
       {successMsg && (
         <div className="alert alert-success">
