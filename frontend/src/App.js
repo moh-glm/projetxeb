@@ -9,11 +9,16 @@ function App() {
 
   return (
     <div className="app">
-      {/* Animated background orbs */}
-      <div className="bg-orbs">
-        <div className="orb orb-1" />
-        <div className="orb orb-2" />
-        <div className="orb orb-3" />
+      {/* Animated silk background */}
+      <div className="bg-silk">
+        <div className="silk-fabric" />
+        <div className="silk-sheen" />
+        <div className="silk-sheen silk-sheen-2" />
+        <div className="silk-fold silk-fold-1" />
+        <div className="silk-fold silk-fold-2" />
+        <div className="silk-fold silk-fold-3" />
+        <div className="silk-gold-glow" />
+        <div className="sparkles" />
       </div>
 
       <Header page={page} setPage={setPage} />
