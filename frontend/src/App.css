@@ -136,9 +136,10 @@ body {
 
 .hero-img-main {
   position:relative; z-index:1;
-  width:260px; height:380px; object-fit:contain;
+  width:300px; height:420px; object-fit:cover;
+  border-radius:50% 50% 50% 50% / 55% 55% 45% 45%;
   animation: imgFloat 5s ease-in-out infinite;
-  filter: drop-shadow(0 30px 60px rgba(0,0,0,0.12));
+  filter: drop-shadow(0 30px 60px rgba(0,0,0,0.15));
 }
 
 .hero-img-placeholder {

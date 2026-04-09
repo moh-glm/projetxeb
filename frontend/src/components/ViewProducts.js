@@ -101,20 +101,11 @@ function ViewProducts({ setPage }) {
         <div className="hero-right">
           <div className="hero-img-wrap">
             <div className="hero-img-bg" />
-            {firstProduct && firstProduct.image_url ? (
-              <img
-                className="hero-img-main"
-                src={firstProduct.image_url.startsWith('http')
-                  ? firstProduct.image_url
-                  : `${API_URL}${firstProduct.image_url}`}
-                alt={firstProduct.name}
-              />
-            ) : (
-              <div className="hero-img-placeholder">
-                <span className="bottle-emoji">🧴</span>
-                <span className="bottle-label">Signature</span>
-              </div>
-            )}
+            <img
+              className="hero-img-main"
+              src="https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=600&auto=format&fit=crop&q=80"
+              alt="Signature Perfume"
+            />
             <div className="hero-badge">
               <div className="badge-label">Signature Scent</div>
               <div className="badge-value">{firstProduct ? firstProduct.name : 'Royal Oud'}</div>
