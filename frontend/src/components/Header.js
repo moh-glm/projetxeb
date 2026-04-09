@@ -1,25 +1,29 @@
 import React from 'react';
 
-function Header({ currentPage, setCurrentPage }) {
+function Header({ page, setPage }) {
   return (
     <header className="header">
       <div className="header-content">
         <div className="logo">
-          <span className="logo-icon">✦</span>
-          <span className="logo-text">Parfum&nbsp;Catalog</span>
+          <div className="logo-badge">✦</div>
+          <div className="logo-words">
+            <span className="logo-main">Maison Parfum</span>
+            <span className="logo-sub">Luxury Fragrance</span>
+          </div>
         </div>
+
         <nav className="nav">
           <button
-            className={`nav-btn ${currentPage === 'add' ? 'active' : ''}`}
-            onClick={() => setCurrentPage('add')}
+            className={`nav-btn ${page === 'add' ? 'active' : ''}`}
+            onClick={() => setPage('add')}
           >
-            Add a product
+            Add Product
           </button>
           <button
-            className={`nav-btn ${currentPage === 'view' ? 'active' : ''}`}
-            onClick={() => setCurrentPage('view')}
+            className={`nav-btn ${page === 'view' ? 'active' : ''}`}
+            onClick={() => setPage('view')}
           >
-            View all products
+            Collection
           </button>
         </nav>
       </div>

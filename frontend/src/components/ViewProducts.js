@@ -1,133 +1,130 @@
 import React, { useState, useEffect, useRef } from 'react';
+import SkeletonCard from './SkeletonCard';
 
 const API_URL = process.env.REACT_APP_API_URL || '';
+
+function ProductCard({ product }) {
+  const imgSrc = product.image_url
+    ? (product.image_url.startsWith('http') ? product.image_url : `${API_URL}${product.image_url}`)
+    : null;
+
+  return (
+    <div className="p-card">
+      <div className="p-img">
+        {imgSrc
+          ? <img src={imgSrc} alt={product.name} onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }} />
+          : null
+        }
+        <div className="p-no-img" style={{ display: imgSrc ? 'none' : 'flex' }}>🌸</div>
+        <div className="p-img-overlay" />
+      </div>
+      <div className="p-body">
+        <span className="p-tag">✦ Fragrance</span>
+        <h3 className="p-name">{product.name}</h3>
+        <p className="p-desc">{product.description}</p>
+        <div className="p-footer">
+          <span className="p-price">{parseFloat(product.price).toFixed(2)} €</span>
+          <button className="p-view-btn">Discover</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function ViewProducts() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const jqXhrRef = useRef(null);
+  const [search, setSearch]     = useState('');
+  const jqRef   = useRef(null);
+  const timerRef = useRef(null);
 
-  // Initial load
   useEffect(() => {
     fetchProducts('');
-    // Cleanup on unmount
     return () => {
-      if (jqXhrRef.current) jqXhrRef.current.abort();
+      if (jqRef.current)    jqRef.current.abort();
+      if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);
 
-  // Use jQuery AJAX (as required by the project spec)
-  const fetchProducts = (search) => {
+  const fetchProducts = (term) => {
     setLoading(true);
     setError('');
-
-    // Abort any pending request
-    if (jqXhrRef.current) jqXhrRef.current.abort();
+    if (jqRef.current) jqRef.current.abort();
 
     const $ = window.$;
-    const params = search ? { search } : {};
-
-    jqXhrRef.current = $.ajax({
+    jqRef.current = $.ajax({
       url:     `${API_URL}/api/products`,
       type:    'GET',
-      data:    params,
-      success: (data) => {
-        setProducts(data);
-        setLoading(false);
-      },
-      error: (xhr, status) => {
+      data:    term ? { search: term } : {},
+      success: (data) => { setProducts(data); setLoading(false); },
+      error:   (xhr, status) => {
         if (status !== 'abort') {
-          setError('Failed to load products. Please try again.');
+          setError('Failed to load products. Please check the server.');
           setLoading(false);
         }
       },
     });
   };
 
-  const handleSearchChange = (e) => {
-    const value = e.target.value;
-    setSearchTerm(value);
-    fetchProducts(value);
-  };
-
-  const getImageSrc = (imageUrl) => {
-    if (!imageUrl) return null;
-    if (imageUrl.startsWith('http')) return imageUrl;
-    return `${API_URL}${imageUrl}`;
+  // Debounced search — fires 350ms after user stops typing
+  const handleSearch = (e) => {
+    const val = e.target.value;
+    setSearch(val);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => fetchProducts(val), 350);
   };
 
   return (
-    <div className="view-container">
-      {/* Header + search bar */}
-      <div className="view-header">
-        <h2 className="page-title">The <span>Collection</span></h2>
-        <div className="search-wrapper">
-          <span className="search-icon-left">&#128269;</span>
+    <div className="view-wrap">
+      <div className="view-top">
+        <div className="s-header" style={{ marginBottom: 0 }}>
+          <p className="s-eyebrow">✦ explore our range</p>
+          <h1 className="s-title">The <em>Collection</em></h1>
+          <div className="s-line" />
+        </div>
+
+        <div className="search-wrap">
+          <span className="search-icon-sym">◎</span>
           <input
             type="text"
             className="search-input"
-            placeholder="Search by name..."
-            value={searchTerm}
-            onChange={handleSearchChange}
+            placeholder="Search fragrances..."
+            value={search}
+            onChange={handleSearch}
           />
         </div>
       </div>
 
-      {/* States */}
+      {!loading && !error && products.length > 0 && (
+        <p className="results-count">
+          <span>{products.length}</span> fragrance{products.length !== 1 ? 's' : ''}
+          {search && <> matching "<span>{search}</span>"</>}
+        </p>
+      )}
+
       {loading && (
-        <div className="loading">
-          <div className="spinner"></div>
-          <span>Loading products...</span>
+        <div className="products-grid">
+          {[1,2,3,4,5,6].map(i => <SkeletonCard key={i} />)}
         </div>
       )}
+
       {!loading && error && (
-        <div className="alert alert-error">{error}</div>
+        <div className="loader"><span>⚠</span> {error}</div>
       )}
+
       {!loading && !error && products.length === 0 && (
-        <div className="empty-state">
-          <span className="empty-icon">&#127808;</span>
-          <p>
-            {searchTerm
-              ? `No products found for "${searchTerm}"`
-              : 'No products yet. Be the first to add a perfume!'}
+        <div className="empty">
+          <span className="empty-icon">🌸</span>
+          <p className="empty-text">
+            {search ? `No fragrances found for "${search}"` : 'The collection is empty. Add your first fragrance!'}
           </p>
         </div>
       )}
 
-      {/* Product grid */}
       {!loading && !error && products.length > 0 && (
         <div className="products-grid">
-          {products.map((product) => (
-            <div key={product.id} className="product-card">
-              <div className="card-image">
-                {product.image_url ? (
-                  <img
-                    src={getImageSrc(product.image_url)}
-                    alt={product.name}
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.nextSibling.style.display = 'flex';
-                    }}
-                  />
-                ) : null}
-                <div
-                  className="no-image"
-                  style={{ display: product.image_url ? 'none' : 'flex' }}
-                >
-                  <span>&#127808;</span>
-                </div>
-              </div>
-              <div className="card-body">
-                <h3 className="card-title">{product.name}</h3>
-                <p className="card-description">{product.description}</p>
-                <p className="card-price">
-                  {parseFloat(product.price).toFixed(2)}&nbsp;€
-                </p>
-              </div>
-            </div>
-          ))}
+          {products.map(p => <ProductCard key={p.id} product={p} />)}
         </div>
       )}
     </div>

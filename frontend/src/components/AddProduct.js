@@ -1,33 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
+import ToastContainer from './Toast';
 
 const API_URL = process.env.REACT_APP_API_URL || '';
 
-function AddProduct({ setCurrentPage }) {
-  const [form, setForm] = useState({
-    name: '',
-    description: '',
-    price: '',
-    image: null,
-  });
-  const [errors, setErrors]           = useState({});
-  const [successMsg, setSuccessMsg]   = useState('');
-  const [serverError, setServerError] = useState('');
-  const [loading, setLoading]         = useState(false);
-  const [imagePreview, setImagePreview] = useState(null);
+let toastIdCounter = 0;
 
-  // ── Front-end validation ───────────────────────────────────────────────────
+function AddProduct({ setPage }) {
+  const [form, setForm]           = useState({ name: '', description: '', price: '', image: null });
+  const [errors, setErrors]       = useState({});
+  const [loading, setLoading]     = useState(false);
+  const [preview, setPreview]     = useState(null);
+  const [toasts, setToasts]       = useState([]);
+  const [fileName, setFileName]   = useState('');
+
+  const addToast = (type, message) => {
+    setToasts(prev => [...prev, { id: ++toastIdCounter, type, message }]);
+  };
+
+  const removeToast = useCallback((id) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
+
   const validate = () => {
-    const errs = {};
-    if (!form.name.trim())
-      errs.name = 'Product name is required';
-    if (!form.description.trim())
-      errs.description = 'Description is required';
-    if (!form.price) {
-      errs.price = 'Price is required';
-    } else if (isNaN(form.price) || parseFloat(form.price) <= 0) {
-      errs.price = 'Price must be a positive number';
-    }
-    return errs;
+    const e = {};
+    if (!form.name.trim())        e.name        = 'Product name is required';
+    if (!form.description.trim()) e.description = 'Description is required';
+    if (!form.price)              e.price       = 'Price is required';
+    else if (isNaN(form.price) || parseFloat(form.price) <= 0)
+                                  e.price       = 'Price must be a positive number';
+    return e;
   };
 
   const handleChange = (e) => {
@@ -36,151 +37,145 @@ function AddProduct({ setCurrentPage }) {
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
-  const handleImageChange = (e) => {
+  const handleImage = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      setErrors(prev => ({ ...prev, image: 'Only image files are allowed' }));
+      addToast('error', 'Only image files are allowed');
       return;
     }
     setForm(prev => ({ ...prev, image: file }));
+    setFileName(file.name);
     setErrors(prev => ({ ...prev, image: '' }));
     const reader = new FileReader();
-    reader.onloadend = () => setImagePreview(reader.result);
+    reader.onloadend = () => setPreview(reader.result);
     reader.readAsDataURL(file);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSuccessMsg('');
-    setServerError('');
-
-    const validationErrors = validate();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
+    const errs = validate();
+    if (Object.keys(errs).length) { setErrors(errs); return; }
 
     setLoading(true);
     try {
-      const formData = new FormData();
-      formData.append('name',        form.name.trim());
-      formData.append('description', form.description.trim());
-      formData.append('price',       form.price);
-      if (form.image) formData.append('image', form.image);
+      const fd = new FormData();
+      fd.append('name',        form.name.trim());
+      fd.append('description', form.description.trim());
+      fd.append('price',       form.price);
+      if (form.image) fd.append('image', form.image);
 
-      const res  = await fetch(`${API_URL}/api/products`, {
-        method: 'POST',
-        body: formData,
-      });
+      const res  = await fetch(`${API_URL}/api/products`, { method: 'POST', body: fd });
       const data = await res.json();
 
       if (!res.ok) {
-        setServerError(data.error || 'An error occurred while adding the product');
+        addToast('error', data.error || 'Failed to add product');
       } else {
-        setSuccessMsg('Product added successfully!');
+        addToast('success', `"${form.name}" added to the collection!`);
         setForm({ name: '', description: '', price: '', image: null });
-        setImagePreview(null);
+        setPreview(null);
+        setFileName('');
         setErrors({});
-        // Reset the file input
-        const fileInput = document.getElementById('image');
-        if (fileInput) fileInput.value = '';
+        const fi = document.getElementById('img-upload');
+        if (fi) fi.value = '';
       }
-    } catch (err) {
-      setServerError('Unable to connect to the server. Please try again.');
+    } catch {
+      addToast('error', 'Unable to connect to the server');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="form-container">
-      <h2 className="page-title">New <span>Perfume</span></h2>
-      <div className="luxury-divider"><span>✦ add to collection ✦</span></div>
+    <>
+      <ToastContainer toasts={toasts} onClose={removeToast} />
 
-      {successMsg && (
-        <div className="alert alert-success">
-          <span>{successMsg}</span>
-          <button className="link-btn" onClick={() => setCurrentPage('view')}>
-            View all products &rarr;
-          </button>
-        </div>
-      )}
-      {serverError && (
-        <div className="alert alert-error">{serverError}</div>
-      )}
-
-      <form onSubmit={handleSubmit} noValidate className="product-form">
-        {/* Name */}
-        <div className="form-group">
-          <label htmlFor="name">Product Name <span className="required">*</span></label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            className={errors.name ? 'input-error' : ''}
-            placeholder="e.g. Chanel No. 5"
-          />
-          {errors.name && <span className="error-msg">{errors.name}</span>}
+      <div className="form-wrap">
+        <div className="s-header">
+          <p className="s-eyebrow">✦ curate your collection</p>
+          <h1 className="s-title">Add a New <em>Fragrance</em></h1>
+          <div className="s-line" />
         </div>
 
-        {/* Description */}
-        <div className="form-group">
-          <label htmlFor="description">Description <span className="required">*</span></label>
-          <textarea
-            id="description"
-            name="description"
-            value={form.description}
-            onChange={handleChange}
-            className={errors.description ? 'input-error' : ''}
-            placeholder="Describe the fragrance, notes, occasion..."
-            rows={4}
-          />
-          {errors.description && <span className="error-msg">{errors.description}</span>}
-        </div>
+        <div className="glass-card">
+          <form onSubmit={handleSubmit} noValidate>
 
-        {/* Price */}
-        <div className="form-group">
-          <label htmlFor="price">Price (€) <span className="required">*</span></label>
-          <input
-            type="number"
-            id="price"
-            name="price"
-            value={form.price}
-            onChange={handleChange}
-            className={errors.price ? 'input-error' : ''}
-            placeholder="e.g. 89.99"
-            step="0.01"
-            min="0.01"
-          />
-          {errors.price && <span className="error-msg">{errors.price}</span>}
-        </div>
-
-        {/* Image */}
-        <div className="form-group">
-          <label htmlFor="image">Product Image <span className="optional">(optional)</span></label>
-          <input
-            type="file"
-            id="image"
-            name="image"
-            accept="image/*"
-            onChange={handleImageChange}
-          />
-          {errors.image && <span className="error-msg">{errors.image}</span>}
-          {imagePreview && (
-            <div className="image-preview">
-              <img src={imagePreview} alt="Preview" />
+            {/* Name */}
+            <div className="f-group">
+              <input
+                className={`f-input${errors.name ? ' err' : ''}`}
+                type="text" name="name" id="name"
+                value={form.name} onChange={handleChange}
+                placeholder=" "
+                autoComplete="off"
+              />
+              <label className="f-label" htmlFor="name">Product Name *</label>
+              {errors.name && <p className="f-err">{errors.name}</p>}
             </div>
-          )}
+
+            {/* Description */}
+            <div className="f-group is-textarea">
+              <textarea
+                className={`f-input f-textarea${errors.description ? ' err' : ''}`}
+                name="description" id="description"
+                value={form.description} onChange={handleChange}
+                placeholder=" "
+              />
+              <label className="f-label" htmlFor="description">Description *</label>
+              {errors.description && <p className="f-err">{errors.description}</p>}
+            </div>
+
+            {/* Price */}
+            <div className="f-group">
+              <input
+                className={`f-input${errors.price ? ' err' : ''}`}
+                type="number" name="price" id="price"
+                value={form.price} onChange={handleChange}
+                placeholder=" " step="0.01" min="0.01"
+              />
+              <label className="f-label" htmlFor="price">Price (€) *</label>
+              {errors.price && <p className="f-err">{errors.price}</p>}
+            </div>
+
+            {/* Image upload */}
+            <div className="upload-box">
+              <input type="file" id="img-upload" accept="image/*" onChange={handleImage} />
+              <div className="upload-inner">
+                {preview ? (
+                  <div className="img-preview">
+                    <img src={preview} alt="preview" />
+                  </div>
+                ) : (
+                  <>
+                    <span className="upload-icon">⬆</span>
+                    <span className="upload-text">
+                      {fileName || 'Choose product image'}
+                    </span>
+                    <span className="upload-hint">PNG, JPG up to 5 MB — optional</span>
+                  </>
+                )}
+                {fileName && preview && (
+                  <span className="upload-text" style={{ marginTop: '0.5rem', fontSize: '0.72rem' }}>
+                    {fileName}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <button type="submit" className="submit-btn" disabled={loading}>
+              {loading && <span className="btn-spinner" />}
+              {loading ? 'Adding to Collection...' : 'Add to Collection'}
+            </button>
+          </form>
         </div>
 
-        <button type="submit" className="submit-btn" disabled={loading}>
-          {loading ? 'Adding...' : 'Add Product'}
-        </button>
-      </form>
-    </div>
+        <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.78rem', letterSpacing: '1px', color: 'var(--text-muted)' }}>
+          <button className="link-btn" onClick={() => setPage('view')}>
+            ← View all fragrances
+          </button>
+        </p>
+      </div>
+    </>
   );
 }
 

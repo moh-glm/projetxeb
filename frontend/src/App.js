@@ -5,20 +5,28 @@ import ViewProducts from './components/ViewProducts';
 import './App.css';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('view');
+  const [page, setPage] = useState('view');
 
   return (
     <div className="app">
-      <Header currentPage={currentPage} setCurrentPage={setCurrentPage} />
+      {/* Animated background orbs */}
+      <div className="bg-orbs">
+        <div className="orb orb-1" />
+        <div className="orb orb-2" />
+        <div className="orb orb-3" />
+      </div>
+
+      <Header page={page} setPage={setPage} />
+
       <main className="main-content">
-        {currentPage === 'add' ? (
-          <AddProduct setCurrentPage={setCurrentPage} />
-        ) : (
-          <ViewProducts />
-        )}
+        {page === 'add'
+          ? <AddProduct setPage={setPage} />
+          : <ViewProducts />
+        }
       </main>
+
       <footer className="footer">
-        <p>&copy; 2026 &nbsp;✦&nbsp; Parfum Catalog &nbsp;✦&nbsp; All rights reserved</p>
+        &copy; 2026 &nbsp;✦&nbsp; Maison Parfum &nbsp;✦&nbsp; Luxury Fragrance Catalog
       </footer>
     </div>
   );
